@@ -1,0 +1,10 @@
+where to create file in ste[pIgnore the database file
+data.db
+nse_symbols.csv
+
+Ignore the virtual environment folder (if you create one)
+venv/
+pycache/
+
+Ignore sensitive environment variables
+.env
