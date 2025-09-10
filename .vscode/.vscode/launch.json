@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/Anu/Desktop",
-      "program": "c:/Users/Anu/Desktop/build/Debug/outDebug",
+      "cwd": "c:/Users/Anu/Documents/anurag",
+      "program": "c:/Users/Anu/Documents/anurag/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

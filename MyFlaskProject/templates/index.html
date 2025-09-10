@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Changed Title -->
+    <title>FinancialTracker - Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1200px; margin: auto; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
+        h1, h2 { color: #1877f2; }
+        .grid-container { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        form { margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #dddfe2; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #166fe5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #dddfe2; vertical-align: middle; }
+        th { background-color: #e9ebee; }
+        .delete-btn { background-color: #fa3e3e; padding: 5px 10px; text-decoration: none; color: white; border-radius: 4px; font-size: 14px; }
+        .delete-btn:hover { background-color: #e03838; }
+        .total-section { text-align: right; font-size: 1.1em; font-weight: bold; margin-top: 5px; padding-top: 10px; border-top: 1px solid #e9ebee;}
+        .total-section span { color: #606770; font-weight: normal; }
+        .profit { color: #31a24c; } /* Green for profit */
+        .loss { color: #fa3e3e; } /* Red for loss */
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .navbar-user { font-weight: bold; }
+        .logout-btn { background-color: #606770; padding: 8px 15px; text-decoration: none; color: white; border-radius: 6px; font-size: 14px; }
+        .logout-btn:hover { background-color: #4b5158; }
+        .flash-messages { list-style: none; padding: 0; margin-bottom: 20px; }
+        .flash-messages li { padding: 15px; border-radius: 6px; color: white; text-align: center; font-weight: bold; }
+        .flash-success { background-color: #31a24c; }
+        .flash-danger { background-color: #fa3e3e; }
+        .flash-info { background-color: #1877f2; }
+        .autocomplete-container { position: relative; }
+        .autocomplete-suggestions { position: absolute; border: 1px solid #ddd; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: white; max-height: 200px; overflow-y: auto; }
+        .autocomplete-suggestions div { padding: 10px; cursor: pointer; border-bottom: 1px solid #ddd; }
+        .autocomplete-suggestions div:hover { background-color: #e9e9e9; }
+        .autocomplete-suggestions div strong { color: #1877f2; }
+        @media (max-width: 900px) { .grid-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-user">Welcome, {{ current_user.username }}!</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="flash-{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <h1>My FinancialTracker</h1>
+    <div class="grid-container">
+        <div>
+            <div class="container" style="margin-bottom: 40px;">
+                <h2>Expense Tracker</h2>
+                <form action="/add" method="post">
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" name="description" placeholder="e.g., Coffee" required>
+                    <label for="amount">Amount (₹):</label>
+                    <input type="number" id="amount" name="amount" step="0.01" placeholder="e.g., 150" required>
+                    <button type="submit">Add Expense</button>
+                </form>
+            </div>
+            <div class="container">
+                <h2>Stock Portfolio</h2>
+                <form action="/add_stock" method="post">
+                    <label for="symbol">Stock Symbol:</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="symbol" name="symbol" placeholder="e.g., RELIANCE" required autocomplete="off">
+                        <div class="autocomplete-suggestions" id="suggestions"></div>
+                    </div>
+                    <label for="shares">Number of Shares:</label>
+                    <input type="number" id="shares" name="shares" step="any" placeholder="e.g., 10" required>
+                    <label for="purchase_price">Purchase Price per Share (₹):</label>
+                    <input type="number" id="purchase_price" name="purchase_price" step="any" placeholder="e.g., 2500" required>
+                    <button type="submit">Add Stock</button>
+                </form>
+            </div>
+        </div>
+        <div>
+            <div class="container" style="margin-bottom: 40px;">
+                <h3>Expenses List</h3>
+                {% if total_expenses > 0 %}
+                    <div class="total-section" style="font-size: 1.3em;">
+                        Total: ₹{{ "%.2f"|format(total_expenses) }}
+                    </div>
+                {% endif %}
+                <table>
+                    <tr><th>Description</th><th>Amount</th><th>Action</th></tr>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.description }}</td>
+                        <td>₹{{ "%.2f"|format(expense.amount) }}</td>
+                        <td><a href="/delete/{{ expense.id }}" class="delete-btn">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <div class="container">
+                <h3>Portfolio Holdings</h3>
+                 {% if portfolio_value > 0 %}
+                    <div class="total-section"><span>Total Value:</span> ₹{{ "%.2f"|format(portfolio_value) }}</div>
+                    <div class="total-section"><span>Total Cost:</span> ₹{{ "%.2f"|format(total_cost_basis) }}</div>
+                    <div class="total-section {% if total_gain_loss >= 0 %}profit{% else %}loss{% endif %}">
+                        <span>Total Gain/Loss:</span> ₹{{ "%.2f"|format(total_gain_loss) }}
+                    </div>
+                 {% endif %}
+                <table>
+                    <tr><th>Symbol</th><th>Shares</th><th>Avg. Cost</th><th>Current Price</th><th>Value</th><th>Gain/Loss</th><th>Action</th></tr>
+                    {% for data in stock_data %}
+                    <tr>
+                        <td>{{ data.stock.symbol }}</td>
+                        <td>{{ data.stock.shares }}</td>
+                        <td>₹{{ "%.2f"|format(data.stock.avg_cost) }}</td>
+                        <td>₹{{ "%.2f"|format(data.price) if data.price != 'N/A' else 'N/A' }}</td>
+                        <td>₹{{ "%.2f"|format(data.value) if data.value != 'N/A' else 'N/A' }}</td>
+                        <td class="{% if data.gain_loss != 'N/A' and data.gain_loss >= 0 %}profit{% else %}loss{% endif %}">
+                            ₹{{ "%.2f"|format(data.gain_loss) if data.gain_loss != 'N/A' else 'N/A' }}
+                        </td>
+                        <td><a href="/delete_stock/{{ data.stock.id }}" class="delete-btn">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        const symbolInput = document.getElementById('symbol');
+        const suggestionsContainer = document.getElementById('suggestions');
+        symbolInput.addEventListener('input', async function() {
+            const query = this.value;
+            if (query.length < 2) {
+                suggestionsContainer.innerHTML = '';
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            const response = await fetch(`/search?q=${query}`);
+            const suggestions = await response.json();
+            if (suggestions.length > 0) {
+                let html = '';
+                suggestions.forEach(stock => {
+                    html += `<div data-symbol="${stock.Symbol}"><strong>${stock.Symbol}</strong> - ${stock.Name}</div>`;
+                });
+                suggestionsContainer.innerHTML = html;
+                suggestionsContainer.style.display = 'block';
+            } else {
+                suggestionsContainer.innerHTML = '';
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+        suggestionsContainer.addEventListener('click', function(e) {
+            if (e.target.dataset.symbol) {
+                symbolInput.value = e.target.dataset.symbol;
+                suggestionsContainer.innerHTML = '';
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (e.target.id !== 'symbol') {
+                suggestionsContainer.innerHTML = '';
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+

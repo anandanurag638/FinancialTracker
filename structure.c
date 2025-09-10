@@ -1,4 +1,1 @@
-#include<stdio.h>
-
-void main(){
-}
+#include<bits/stdc++.h>
